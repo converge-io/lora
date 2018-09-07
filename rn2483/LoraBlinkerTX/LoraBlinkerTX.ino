@@ -17,8 +17,9 @@ int loops_count = 0;
 void lora_init(){ 
   
   //output LED pin
-  pinMode(13, OUTPUT);
-  pinMode(12, OUTPUT);
+  pinMode(9, OUTPUT); //external led
+  pinMode(13, OUTPUT); //internal led
+  pinMode(12, OUTPUT); //rn2483 reset
   
   //input LED pin
   pinMode(2, INPUT);           
@@ -42,81 +43,137 @@ void lora_init(){
   delay(2000);
   led_off();
 
-  Serial.println("Initing LoRa");
-  
   loraSerial.listen();
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+
   loraSerial.println("sys get ver");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
-  
-  loraSerial.println("mac pause");
-  str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
   
 //  loraSerial.println("radio set bt 0.5");
 //  wait_for_ok();
   
   loraSerial.println("radio set mod lora");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set mod lora");
+    while(1);
+  }
   
-  loraSerial.println("radio set freq 868000000");
+  loraSerial.println("radio set freq 868100000");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set freq");
+    while(1);
+  }
   
   loraSerial.println("radio set pwr 14");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set pwr");
+    while(1);
+  }
   
-  loraSerial.println("radio set sf sf7");
+  loraSerial.println("radio set sf sf12");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set sf");
+    while(1);
+  }
   
   loraSerial.println("radio set afcbw 125");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set afcbw");
+    while(1);
+  }
   
   loraSerial.println("radio set rxbw 250");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set rxbw");
+    while(1);
+  }
   
 //  loraSerial.println("radio set bitrate 50000");
 //  wait_for_ok();
   
-//  loraSerial.println("radio set fdev 25000");
-//  wait_for_ok();
+//  loraSerial.println("radio set fdev 0");
+//  str = loraSerial.readStringUntil('\n');
+//  if(str.indexOf("ok") != 0){
+//    Serial.println(str);
+//    Serial.println("error set rxbw");
+//    while(1);
+//  }
   
   loraSerial.println("radio set prlen 8");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set prlen");
+    while(1);
+  }
   
   loraSerial.println("radio set crc on");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set crc");
+    while(1);
+  }
   
   loraSerial.println("radio set iqi off");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set iqi");
+    while(1);
+  }
   
-  loraSerial.println("radio set cr 4/5");
+  loraSerial.println("radio set cr 4/8");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set cr");
+    while(1);
+  }
   
-  loraSerial.println("radio set wdt 0"); //disable for continuous reception
-  str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+//  loraSerial.println("radio set wdt 0"); //disable for continuous reception
+//  str = loraSerial.readStringUntil('\n');
+//  if(str.indexOf("ok") != 0){
+//    Serial.println(str);
+//    Serial.println("error set wdt");
+//    while(1);
+//  }
   
   loraSerial.println("radio set sync 12");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set sync");
+    while(1);
+  }
   
-  loraSerial.println("radio set bw 250");
+  loraSerial.println("radio set bw 125");
   str = loraSerial.readStringUntil('\n');
-  Serial.println(str);
+  if(str.indexOf("ok") != 0){
+    Serial.println(str);
+    Serial.println("error set bw");
+    while(1);
+  } 
 
-  Serial.println("starting loop");  
+  loraSerial.println("mac pause");
+  str = loraSerial.readStringUntil('\n');
+  if(str.indexOf("0") == 0){
+    Serial.println(str);
+    Serial.println("error set mod lora");
+    while(1);
+  }
 
   Serial.println("");
   Serial.println("");
@@ -152,22 +209,7 @@ void loop() {
   
   if(transmitting_packets){
     for (int i=0; i<100; i++){
-      if (loops_count == 9){
-      toggle_led();  
-      loops_count = 0;
-      }
-
-      delay(10);     
-      loraSerial.println("radio tx a");
-      str = loraSerial.readStringUntil('\n');
-      Serial.println(str);
-      str = loraSerial.readStringUntil('\n');
-      Serial.println(str);    
-      loops_count++;
-    }  
-    for (int i=0; i<1000; i++){
       toggle_led();
-      delay(10);
       memset(data, 0, sizeof(data));
       strcat(data, "radio tx ");
       sprintf(i_string, "%d", i);
@@ -215,15 +257,15 @@ int wait_for_ok()
 
 void toggle_led()
 {
-  digitalWrite(13, !digitalRead(13));
+  digitalWrite(9, !digitalRead(9));
 }
 
 void led_on()
 {
-  digitalWrite(13, 1);
+  digitalWrite(9, 1);
 }
 
 void led_off()
 {
-  digitalWrite(13, 0);
+  digitalWrite(9, 0);
 }
