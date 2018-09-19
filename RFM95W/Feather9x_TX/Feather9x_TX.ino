@@ -66,13 +66,22 @@
 
 
 // Change to 434.0 or other frequency, must match RX's freq!
-#define RF95_FREQ 915.0
+#define RF95_FREQ 868.1
 
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
+
+
+int i;
+int counter = 1;
+bool sending_packets = 0;
+
 void setup() 
 {
+  pinMode(9,INPUT_PULLUP);
+
+  
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, HIGH);
 
@@ -103,57 +112,74 @@ void setup()
     while (1);
   }
   Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
+
+  while (!rf95.setModemConfig(RH_RF95::Bw125Cr48Sf4096)) {
+    Serial.println("LoRa radio init failed");
+    while (1);
+  }
   
   // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
 
   // The default transmitter power is 13dBm, using PA_BOOST.
   // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then 
   // you can set transmitter powers from 5 to 23 dBm:
-  rf95.setTxPower(23, false);
+  rf95.setTxPower(20, false);
+
 }
 
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 
 void loop()
 {
-  delay(1000); // Wait 1 second between transmits, could also 'sleep' here!
-  Serial.println("Transmitting..."); // Send a message to rf95_server
-  
-  char radiopacket[20] = "Hello World #      ";
-  itoa(packetnum++, radiopacket+13, 10);
-  Serial.print("Sending "); Serial.println(radiopacket);
-  radiopacket[19] = 0;
-  
-  Serial.println("Sending...");
-  delay(10);
-  rf95.send((uint8_t *)radiopacket, 20);
+ 
 
-  Serial.println("Waiting for packet to complete..."); 
-  delay(10);
-  rf95.waitPacketSent();
-  // Now wait for a reply
-  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof(buf);
+  sending_packets = !digitalRead(9);
 
-  Serial.println("Waiting for reply...");
-  if (rf95.waitAvailableTimeout(1000))
-  { 
-    // Should be a reply message for us now   
-    if (rf95.recv(buf, &len))
-   {
-      Serial.print("Got reply: ");
-      Serial.println((char*)buf);
-      Serial.print("RSSI: ");
-      Serial.println(rf95.lastRssi(), DEC);    
+  if (sending_packets){
+    for (i=0; i<100; i++){
+      char radiopacket[4] = "";
+      sprintf(radiopacket,"%d",packetnum);
+      radiopacket[3] = 0;  
+      Serial.println("Sending...");
+      delay(10);
+      rf95.send((uint8_t *)radiopacket, 4);  
+      Serial.println("Waiting for packet to complete..."); 
+      delay(10);
+      rf95.waitPacketSent();
+      packetnum++;
     }
-    else
-    {
-      Serial.println("Receive failed");
-    }
+    packetnum = 0;
+    Serial.println(""); 
+    Serial.println(""); 
+    Serial.println(""); 
   }
-  else
-  {
-    Serial.println("No reply, is there a listener around?");
-  }
+
+
+  
+//  // Now wait for a reply
+//  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+//  uint8_t len = sizeof(buf);
+//
+//  Serial.println("Waiting for reply...");
+//  if (rf95.waitAvailableTimeout(1000))
+//  { 
+//    // Should be a reply message for us now   
+//    if (rf95.recv(buf, &len))
+//   {
+//      Serial.print("Got reply: ");
+//      Serial.println((char*)buf);
+//      Serial.print("RSSI: ");
+//      Serial.println(rf95.lastRssi(), DEC);    
+//    }
+//    else
+//    {
+//      Serial.println("Receive failed");
+//    }
+//  }
+//  else
+//  {
+//    Serial.println("No reply, is there a listener around?");
+//  }
+
 
 }
